@@ -997,6 +997,10 @@ method gil() {
     $gil
 }
 
+sub take-cuid {
+    use nqp; take nqp::getnextcuid
+}
+
 method require(Str $module, Num $version?, Bool :$handle) {
     my @import_args;
     push @!required_modules, ($module, $version, @import_args);
@@ -1037,7 +1041,7 @@ method require(Str $module, Num $version?, Bool :$handle) {
                         self.restore_modules;
                     };
                     $*W.add_object($block);
-                    my $op := $*W.add_phaser(Mu, 'INIT', $block, class :: { method cuid { (^2**128).pick }});
+                    my $op := $*W.add_phaser(Mu, 'INIT', $block, class :: { method cuid { $ //= gather take-cuid }});
                 }
             }
             my @symbols = self.import($module, |@args).map({
@@ -1403,7 +1407,7 @@ method initialize(Bool :$reinitialize) {
             self.init_data($_) with CALLER::MY::<$=finish>;
         };
         $*W.add_object($block);
-        my $op := $*W.add_phaser(Mu, 'ENTER', $block, class :: { method cuid { (^2**128).pick }});
+        my $op := $*W.add_phaser(Mu, 'ENTER', $block, class :: { method cuid { $ //= gather take-cuid }});
     }
 
     if not $reinitialize and $!p5.defined {
